@@ -17,22 +17,24 @@ jobs:
         with:
           creds: ${{secrets.AZURE_CREDENTIALS}}  
 
-      - name: Deploy ARM Template (Resource Group)
-        uses: azure/arm-deploy@v1
+      - name: Deploy Resource Group (Azure CLI)
+        uses: azure/cli@v2
         with:
-          scope: subscription
-          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          region: eastus2
-          template: ARM-templates/resourceGroup.json
-          deploymentName: create-rg-deployment
+          azcliversion: latest
+          inlineScript: |
+            az deployment sub create \
+              --name create-rg-deployment \
+              --location eastus2 \
+              --template-file ARM-templates/resourceGroup.json \
+              --parameters resourceGroupName=nQ-Resource-Group
 
-      - name: Deploy Storage Account ARM Template
+      - name: Deploy Storage Account (ARM Action)
         uses: azure/arm-deploy@v1
         with:
           scope: resourcegroup
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           resourceGroupName: nQ-Resource-Group
           template: ARM-templates/storageaccount.json
-          parameters: resourceGroupName=nQ-Resource-Group
+          parameters: ARM-templates/parameters.json
           deploymentMode: Incremental
           deploymentName: nQ-Incremental-Deployment-Storage
