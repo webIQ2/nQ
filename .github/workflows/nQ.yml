@@ -25,4 +25,7 @@ jobs:
         with:
           azcliversion: 2.45.0
           inlineScript: |
-            az deployment sub create --resource-group nQ --template-file ARM-templates/resourceGroup.json
+            az deployment sub create \
+              --name create-rg-deployment \
+              --location eastus2 \
+              --template-file ARM-templates/resourceGroup.json
