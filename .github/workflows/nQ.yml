@@ -33,6 +33,6 @@ jobs:
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           resourceGroupName: nQ-Resource-Group
           template: ARM-templates/storageaccount.json
-          parameters: ARM-templates/parameters.json
+          parameters: resourceGroupName=nQ-Resource-Group
           deploymentMode: Incremental
           deploymentName: nQ-Incremental-Deployment-Storage
