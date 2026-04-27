@@ -3,6 +3,8 @@
 name: armTemplateDeployment
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -17,3 +19,10 @@ jobs:
         uses: Azure/Login@v1
         with:
           creds:  ${{secrets.AZURE_CREDENTIALS}}  
+
+      - name: Run Azure CLI commands
+        uses: Azure/CLI@v1
+        with:
+          azcliversion: 2.45.0
+          inlineScript: |
+            az deployment sub create --resource-group nQ --template-file ARM-templates/resourceGroup.json
