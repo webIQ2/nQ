@@ -21,9 +21,9 @@ jobs:
           creds:  ${{secrets.AZURE_CREDENTIALS}}  
 
       - name: Run Azure CLI commands
-        uses: Azure/CLI@v1
+        uses: Azure/cli@v2
         with:
-          azcliversion: 2.45.0
+          azcliversion: latest
           inlineScript: |
             az deployment sub create \
               --name create-rg-deployment \
