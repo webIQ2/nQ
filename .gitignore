@@ -1,0 +1,12 @@
+.DS_Store
+Thumbs.db
+*.log
+*.cicd.json
+*.cicd.final.json
+
+# Local/downloaded archives
+*.zip
+
+# OS/editor noise
+Thumbs.db
+.DS_Store

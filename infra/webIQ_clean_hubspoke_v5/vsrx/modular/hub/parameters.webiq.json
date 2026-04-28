@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceGroupName": { "value": "rg-webiq-vsrx-hub" },
+    "location": { "value": "eastus2" },
+    "vnetName": { "value": "vnet-webiq-vsrx-hub" },
+    "addressSpace": { "value": ["10.60.0.0/16"] },
+    "nvaSubnetPrefix": { "value": "10.60.1.0/24" },
+    "nvaPrivateIp": { "value": "10.60.1.4" },
+    "nvaVmName": { "value": "vsrx-hub" },
+    "nvaVmSize": { "value": "Standard_D3_v2" }
+  }
+}

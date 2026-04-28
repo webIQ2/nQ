@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "hubSubscriptionId": { "value": "7426560d-ace3-4e95-9df4-69985fb9d8cc" },
+    "hubResourceGroupName": { "value": "rg-webiq-vyos-hub" },
+    "hubVnetName": { "value": "vnet-webiq-vyos-hub" },
+    "spokeSubscriptionId": { "value": "ff60f646-9751-4074-9f58-9fc310105c4c" },
+    "spokeResourceGroupName": { "value": "rg-netiq-vyos-commercial" },
+    "spokeVnetName": { "value": "vnet-netiq-commercial" },
+    "peeringPrefix": { "value": "commercial" }
+  }
+}
