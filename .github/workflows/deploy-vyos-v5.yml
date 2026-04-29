@@ -2,77 +2,76 @@ name: deploy-vyos-v5
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'infra/webIQ_clean_hubspoke_v5/**'
-      - '.github/workflows/deploy-vyos-v5.yml'
-      - 'docs/webIQ_v5_github_actions_runbook.md'
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: lab
-    defaults:
-      run:
-        shell: bash
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Azure login (OIDC)
-        uses: azure/login@v2
+      - name: Azure login
+        uses: azure/login@v3
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Verify Azure context
-        run: |
-          az account show --query '{name:name,id:id,tenantId:tenantId}' -o yaml
-          az version
+      - name: Deploy VyOS oneclick
+        uses: azure/cli@v2
+        env:
+          AZURE_CORE_OUTPUT: none
+          ADMIN_SOURCE_PREFIX: ${{ secrets.ADMIN_SOURCE_PREFIX }}
+          NVA_ADMIN_PASSWORD: ${{ secrets.NVA_ADMIN_PASSWORD }}
+          TEST_VM_SSH_PUBLIC_KEY: ${{ secrets.TEST_VM_SSH_PUBLIC_KEY }}
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az account show --output table
+            az config set bicep.use_binary_from_path=false
+            az bicep install
 
-      - name: Prepare temporary parameter file
-        working-directory: infra/webIQ_clean_hubspoke_v5/vyos/oneclick
-        run: |
-          mkdir -p /tmp/webiq
-          printf '%s
-' "${{ secrets.TEST_VM_SSH_PUBLIC_KEY }}" > /tmp/webiq/test_vm_ssh_key.pub
-          cp parameters.webiq.json parameters.cicd.json
-          jq --arg adminPrefix "${{ secrets.ADMIN_SOURCE_PREFIX }}"              --arg nvaPassword "${{ secrets.NVA_ADMIN_PASSWORD }}"              --rawfile sshKey /tmp/webiq/test_vm_ssh_key.pub              '.parameters.adminSourcePrefix.value = $adminPrefix
-              | .parameters.nvaAdminPassword.value = $nvaPassword
-              | .parameters.testVmSshPublicKey.value = ($sshKey | gsub("\n$"; ""))'              parameters.cicd.json > parameters.cicd.final.json
-          test -s parameters.cicd.final.json
-          jq '.parameters | {hubSubscriptionId,commercialSubscriptionId,governmentSubscriptionId}' parameters.cicd.final.json
+            cd infra/webIQ_clean_hubspoke_v5/vyos/oneclick
 
-      - name: Validate tenant-scope deployment
-        working-directory: infra/webIQ_clean_hubspoke_v5/vyos/oneclick
-        run: |
-          az deployment tenant validate             --location eastus2             --template-file main.bicep             --parameters @parameters.cicd.final.json
+            mkdir -p ~/.ssh
+            chmod 700 ~/.ssh
+            printf '%s\n' "$TEST_VM_SSH_PUBLIC_KEY" > ~/.ssh/id_ed25519.pub
+            chmod 600 ~/.ssh/id_ed25519.pub
 
-      - name: Deploy tenant-scope VyOS baseline
-        working-directory: infra/webIQ_clean_hubspoke_v5/vyos/oneclick
-        run: |
-          DEPLOY_NAME="vyos-oneclick-${GITHUB_RUN_ID}"
-          az deployment tenant create             --name "$DEPLOY_NAME"             --location eastus2             --template-file main.bicep             --parameters @parameters.cicd.final.json
+            export SSH_KEY_FILE="$HOME/.ssh/id_ed25519.pub"
+            chmod +x deploy.sh validate.sh
 
-      - name: Validate baseline deployment
-        working-directory: infra/webIQ_clean_hubspoke_v5/vyos/oneclick
-        run: |
-          chmod +x validate.sh
-          ./validate.sh
+            ./deploy.sh
+            ./validate.sh
 
-      - name: Guest smoke test - commercial VM
-        run: |
-          az vm run-command invoke             -g rg-netiq-vyos-commercial             -n vm-commercial-test             --subscription ff60f646-9751-4074-9f58-9fc310105c4c             --command-id RunShellScript             --scripts "ping -c 3 10.62.1.4; curl -I -sS https://management.azure.com; curl -I -sS https://management.usgovcloudapi.net"
+      - name: Smoke test commercial VM
+        uses: azure/cli@v2
+        env:
+          AZURE_CORE_OUTPUT: none
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az vm run-command invoke \
+              -g rg-netiq-vyos-commercial \
+              -n vm-commercial-test \
+              --subscription ff60f646-9751-4074-9f58-9fc310105c4c \
+              --command-id RunShellScript \
+              --scripts "ping -c 3 10.62.1.4; ip route; curl -I -sS https://management.azure.com; curl -I -sS https://management.usgovcloudapi.net" \
+              --query "value[0].message" -o tsv
 
-      - name: Guest smoke test - government VM
-        run: |
-          az vm run-command invoke             -g rg-gi-vyos-government             -n vm-government-test             --subscription 1011dd77-657c-4c57-931b-0b77b92e7378             --command-id RunShellScript             --scripts "ping -c 3 10.61.1.4; curl -I -sS https://management.azure.com; curl -I -sS https://management.usgovcloudapi.net"
+      - name: Smoke test government VM
+        uses: azure/cli@v2
+        env:
+          AZURE_CORE_OUTPUT: none
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az vm run-command invoke \
+              -g rg-gi-vyos-government \
+              -n vm-government-test \
+              --subscription 1011dd77-657c-4c57-931b-0b77b92e7378 \
+              --command-id RunShellScript \
+              --scripts "ping -c 3 10.61.1.4; ip route; curl -I -sS https://management.azure.com; curl -I -sS https://management.usgovcloudapi.net" \
+              --query "value[0].message" -o tsv
