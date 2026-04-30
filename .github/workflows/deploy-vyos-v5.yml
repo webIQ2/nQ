@@ -15,11 +15,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Azure login
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy VyOS oneclick
+      - name: Install Bicep and deploy tenant template
         uses: azure/cli@v2
         env:
           AZURE_CORE_OUTPUT: none
@@ -35,16 +35,39 @@ jobs:
 
             cd infra/webIQ_clean_hubspoke_v5/vyos/oneclick
 
-            mkdir -p ~/.ssh
-            chmod 700 ~/.ssh
-            printf '%s\n' "$TEST_VM_SSH_PUBLIC_KEY" > ~/.ssh/id_ed25519.pub
-            chmod 600 ~/.ssh/id_ed25519.pub
+            DEPLOYMENT_NAME="vyos-oneclick-${GITHUB_RUN_ID}"
+            DEPLOYMENT_LOCATION="eastus2"
 
-            export SSH_KEY_FILE="$HOME/.ssh/id_ed25519.pub"
-            chmod +x deploy.sh validate.sh
+            az deployment tenant validate \
+              --name "${DEPLOYMENT_NAME}-validate" \
+              --location "$DEPLOYMENT_LOCATION" \
+              --template-file main.bicep \
+              --parameters @parameters.webiq.json \
+              --parameters \
+                adminSourcePrefix="$ADMIN_SOURCE_PREFIX" \
+                nvaAdminPassword="$NVA_ADMIN_PASSWORD" \
+                testVmSshPublicKey="$TEST_VM_SSH_PUBLIC_KEY"
 
-            ./deploy.sh
-            ./validate.sh
+            az deployment tenant create \
+              --name "$DEPLOYMENT_NAME" \
+              --location "$DEPLOYMENT_LOCATION" \
+              --template-file main.bicep \
+              --parameters @parameters.webiq.json \
+              --parameters \
+                adminSourcePrefix="$ADMIN_SOURCE_PREFIX" \
+                nvaAdminPassword="$NVA_ADMIN_PASSWORD" \
+                testVmSshPublicKey="$TEST_VM_SSH_PUBLIC_KEY"
+
+      - name: Validate deployed VMs
+        uses: azure/cli@v2
+        env:
+          AZURE_CORE_OUTPUT: none
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az vm show -d -g rg-webiq-vyos-hub -n vyos-hub --subscription 7426560d-ace3-4e95-9df4-69985fb9d8cc -o table
+            az vm show -d -g rg-netiq-vyos-commercial -n vm-commercial-test --subscription ff60f646-9751-4074-9f58-9fc310105c4c -o table
+            az vm show -d -g rg-gi-vyos-government -n vm-government-test --subscription 1011dd77-657c-4c57-931b-0b77b92e7378 -o table
 
       - name: Smoke test commercial VM
         uses: azure/cli@v2
