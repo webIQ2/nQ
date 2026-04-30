@@ -32,16 +32,26 @@ jobs:
           chmod +x decommission.sh
           ./decommission.sh
 
-      - name: Verify resource groups removed
+      - name: Wait for resource groups to be removed
         run: |
-          HUB=$(az group exists -n rg-webiq-vyos-hub --subscription 7426560d-ace3-4e95-9df4-69985fb9d8cc -o tsv)
-          COM=$(az group exists -n rg-netiq-vyos-commercial --subscription ff60f646-9751-4074-9f58-9fc310105c4c -o tsv)
-          GOV=$(az group exists -n rg-gi-vyos-government --subscription 1011dd77-657c-4c57-931b-0b77b92e7378 -o tsv)
+          check_deleted () {
+            local rg="$1"
+            local sub="$2"
+            local attempts=30
 
-          echo "Hub exists: $HUB"
-          echo "Commercial exists: $COM"
-          echo "Government exists: $GOV"
+            for i in $(seq 1 $attempts); do
+              EXISTS=$(az group exists -n "$rg" --subscription "$sub" -o tsv)
+              echo "[$i/$attempts] $rg exists: $EXISTS"
+              if [ "$EXISTS" = "false" ]; then
+                return 0
+              fi
+              sleep 20
+            done
 
-          test "$HUB" = "false"
-          test "$COM" = "false"
-          test "$GOV" = "false"
+            echo "Timed out waiting for $rg to be deleted"
+            return 1
+          }
+
+          check_deleted rg-webiq-vyos-hub 7426560d-ace3-4e95-9df4-69985fb9d8cc
+          check_deleted rg-netiq-vyos-commercial ff60f646-9751-4074-9f58-9fc310105c4c
+          check_deleted rg-gi-vyos-government 1011dd77-657c-4c57-931b-0b77b92e7378
