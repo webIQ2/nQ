@@ -14,17 +14,16 @@ require_cmd() {
 }
 
 require_cmd az
-require_cmd ssh-keygen
 require_cmd python3
 
-if [[ ! -f "$SSH_KEY_FILE" ]]; then
-  mkdir -p "$HOME/.ssh"
-  chmod 700 "$HOME/.ssh"
-  ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "webiq-cloudshell" >/dev/null
-  SSH_KEY_FILE="$HOME/.ssh/id_ed25519.pub"
+if [[ -z "${TEST_VM_SSH_PUBLIC_KEY:-}" ]]; then
+  if [[ ! -f "$SSH_KEY_FILE" ]]; then
+    echo "Set TEST_VM_SSH_PUBLIC_KEY or provide SSH_KEY_FILE pointing to an existing public key." >&2
+    exit 1
+  fi
+  TEST_VM_SSH_PUBLIC_KEY="$(cat "$SSH_KEY_FILE")"
 fi
 
-TEST_VM_SSH_PUBLIC_KEY="${TEST_VM_SSH_PUBLIC_KEY:-$(cat "$SSH_KEY_FILE")}" 
 : "${NVA_ADMIN_PASSWORD:?Set NVA_ADMIN_PASSWORD before running this script.}"
 
 if [[ -z "${ADMIN_SOURCE_PREFIX:-}" ]]; then
@@ -44,13 +43,20 @@ fi
 az account show >/dev/null 2>&1 || az login >/dev/null
 az account set --subscription "$HUB_SUBSCRIPTION_ID"
 
-TERMS_ACCEPTED=$(az vm image terms show   --publisher "sentriumsl"   --offer "vyos-1-2-lts-on-azure"   --plan "vyos-1-3"   --query accepted -o tsv 2>/dev/null || echo "false")
+TERMS_ACCEPTED=$(az vm image terms show \
+  --publisher "sentriumsl" \
+  --offer "vyos-1-2-lts-on-azure" \
+  --plan "vyos-1-3" \
+  --query accepted -o tsv 2>/dev/null || echo "false")
 
 if [[ "$TERMS_ACCEPTED" == "true" ]]; then
   echo "VyOS Marketplace terms already accepted in this subscription. Skipping accept step."
 else
   echo "VyOS Marketplace terms not yet accepted. Attempting acceptance..."
-  az vm image terms accept --publisher "sentriumsl" --offer "vyos-1-2-lts-on-azure" --plan "vyos-1-3" >/dev/null
+  az vm image terms accept \
+    --publisher "sentriumsl" \
+    --offer "vyos-1-2-lts-on-azure" \
+    --plan "vyos-1-3" >/dev/null
 fi
 
 echo "Validating deployment $DEPLOYMENT_NAME"
