@@ -1,0 +1,14 @@
+name: deploy-vsrx-oneclick
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    environment: Lab
+    steps:
+      - run: echo "Reserved for the vSRX oneclick promotion after the VyOS baseline is accepted."

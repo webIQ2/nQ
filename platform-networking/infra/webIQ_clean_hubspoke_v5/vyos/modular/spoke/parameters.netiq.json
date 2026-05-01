@@ -1,0 +1,17 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceGroupName": { "value": "rg-netiq-vyos-commercial" },
+    "location": { "value": "eastus2" },
+    "vnetName": { "value": "vnet-netiq-commercial" },
+    "addressSpace": { "value": ["10.61.0.0/16"] },
+    "workloadSubnetPrefix": { "value": "10.61.1.0/24" },
+    "testVmName": { "value": "vm-commercial-test" },
+    "testVmSize": { "value": "Standard_B1ms" },
+    "deployTestVm": { "value": true },
+    "deployTestVmPublicIp": { "value": false },
+    "enableTransitRouting": { "value": false },
+    "transitNextHopIp": { "value": "10.60.1.4" }
+  }
+}

@@ -1,0 +1,57 @@
+name: destroy-vyos-oneclick
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    environment: Destroy
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Destroy VyOS baseline
+        working-directory: infra/webIQ_clean_hubspoke_v5/vyos/oneclick
+        run: |
+          chmod +x decommission.sh
+          ./decommission.sh
+
+      - name: Wait for resource groups to be removed
+        run: |
+          check_deleted () {
+            local rg="$1"
+            local sub="$2"
+            local attempts=30
+
+            for i in $(seq 1 $attempts); do
+              EXISTS=$(az group exists -n "$rg" --subscription "$sub" -o tsv)
+              echo "[$i/$attempts] $rg exists: $EXISTS"
+              if [ "$EXISTS" = "false" ]; then
+                return 0
+              fi
+              sleep 20
+            done
+
+            echo "Timed out waiting for $rg to be deleted"
+            return 1
+          }
+
+          check_deleted rg-webiq-vyos-hub 7426560d-ace3-4e95-9df4-69985fb9d8cc
+          check_deleted rg-netiq-vyos-commercial ff60f646-9751-4074-9f58-9fc310105c4c
+          check_deleted rg-gi-vyos-government 1011dd77-657c-4c57-931b-0b77b92e7378

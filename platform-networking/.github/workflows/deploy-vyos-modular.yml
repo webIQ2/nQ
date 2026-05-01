@@ -1,0 +1,14 @@
+name: deploy-vyos-modular
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    environment: Lab
+    steps:
+      - run: echo "Reserved for the modular VyOS promotion after the oneclick baseline is fully standardized."

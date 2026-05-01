@@ -1,0 +1,7 @@
+{
+  "customerName": "General Dynamics",
+  "subscriptionId": "7e44898c-91bc-4274-b9ba-1c14da18181b",
+  "deploymentEnvironment": "Production Commercial",
+  "addressSpace": ["10.71.0.0/16"],
+  "workloadSubnetPrefix": "10.71.1.0/24"
+}

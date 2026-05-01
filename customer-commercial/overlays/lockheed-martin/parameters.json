@@ -1,0 +1,7 @@
+{
+  "customerName": "Lockheed Martin",
+  "subscriptionId": "d149fe48-3b6b-492c-af86-e34a1e764e58",
+  "deploymentEnvironment": "Production Commercial",
+  "addressSpace": ["10.72.0.0/16"],
+  "workloadSubnetPrefix": "10.72.1.0/24"
+}

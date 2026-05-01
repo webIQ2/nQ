@@ -1,0 +1,7 @@
+{
+  "customerName": "Northrop Grumman",
+  "subscriptionId": "c176e510-1ff2-4627-9f58-5c2035e7ed45",
+  "deploymentEnvironment": "Production Commercial",
+  "addressSpace": ["10.73.0.0/16"],
+  "workloadSubnetPrefix": "10.73.1.0/24"
+}

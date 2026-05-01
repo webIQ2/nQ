@@ -1,0 +1,89 @@
+name: deploy-vyos-oneclick
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: GitHub environment name
+        required: true
+        default: Lab
+        type: choice
+        options:
+          - Lab
+          - Development
+          - Test
+          - Staging
+          - Production Commercial
+          - Production Government
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target_environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy VyOS oneclick
+        uses: azure/cli@v2
+        env:
+          AZURE_CORE_OUTPUT: none
+          ADMIN_SOURCE_PREFIX: ${{ secrets.ADMIN_SOURCE_PREFIX }}
+          NVA_ADMIN_PASSWORD: ${{ secrets.NVA_ADMIN_PASSWORD }}
+          TEST_VM_SSH_PUBLIC_KEY: ${{ secrets.TEST_VM_SSH_PUBLIC_KEY }}
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az account show --output table
+            az config set bicep.use_binary_from_path=false
+            az bicep install
+
+            cd infra/webIQ_clean_hubspoke_v5/vyos/oneclick
+
+            DEPLOYMENT_NAME="vyos-oneclick-${GITHUB_RUN_ID}"
+            DEPLOYMENT_LOCATION="eastus2"
+
+            az deployment tenant validate               --name "${DEPLOYMENT_NAME}-validate"               --location "$DEPLOYMENT_LOCATION"               --template-file main.bicep               --parameters @parameters.webiq.json               --parameters                 adminSourcePrefix="$ADMIN_SOURCE_PREFIX"                 nvaAdminPassword="$NVA_ADMIN_PASSWORD"                 testVmSshPublicKey="$TEST_VM_SSH_PUBLIC_KEY"
+
+            az deployment tenant create               --name "$DEPLOYMENT_NAME"               --location "$DEPLOYMENT_LOCATION"               --template-file main.bicep               --parameters @parameters.webiq.json               --parameters                 adminSourcePrefix="$ADMIN_SOURCE_PREFIX"                 nvaAdminPassword="$NVA_ADMIN_PASSWORD"                 testVmSshPublicKey="$TEST_VM_SSH_PUBLIC_KEY"
+
+      - name: Validate deployed VMs
+        uses: azure/cli@v2
+        env:
+          AZURE_CORE_OUTPUT: none
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az vm show -d -g rg-webiq-vyos-hub -n vyos-hub --subscription 7426560d-ace3-4e95-9df4-69985fb9d8cc -o table
+            az vm show -d -g rg-netiq-vyos-commercial -n vm-commercial-test --subscription ff60f646-9751-4074-9f58-9fc310105c4c -o table
+            az vm show -d -g rg-gi-vyos-government -n vm-government-test --subscription 1011dd77-657c-4c57-931b-0b77b92e7378 -o table
+
+      - name: Smoke test commercial VM
+        uses: azure/cli@v2
+        env:
+          AZURE_CORE_OUTPUT: none
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az vm run-command invoke               -g rg-netiq-vyos-commercial               -n vm-commercial-test               --subscription ff60f646-9751-4074-9f58-9fc310105c4c               --command-id RunShellScript               --scripts "ping -c 3 10.62.1.4; ip route; curl -I -sS https://management.azure.com; curl -I -sS https://management.usgovcloudapi.net"               --query "value[0].message" -o tsv
+
+      - name: Smoke test government VM
+        uses: azure/cli@v2
+        env:
+          AZURE_CORE_OUTPUT: none
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az vm run-command invoke               -g rg-gi-vyos-government               -n vm-government-test               --subscription 1011dd77-657c-4c57-931b-0b77b92e7378               --command-id RunShellScript               --scripts "ping -c 3 10.61.1.4; ip route; curl -I -sS https://management.azure.com; curl -I -sS https://management.usgovcloudapi.net"               --query "value[0].message" -o tsv

@@ -1,0 +1,41 @@
+name: deploy-governance
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: GitHub environment name
+        required: true
+        default: Development
+        type: choice
+        options:
+          - Development
+          - Test
+          - Staging
+          - Production Commercial
+          - Production Government
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target_environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - uses: azure/cli@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az config set bicep.use_binary_from_path=false
+            az bicep install
+            cd infra/management-groups
+            az deployment tenant create               --location eastus2               --name governance-${GITHUB_RUN_ID}               --template-file main.bicep               --parameters @parameters.webiq.json

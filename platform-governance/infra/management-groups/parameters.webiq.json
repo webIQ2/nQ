@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "rootManagementGroupId": {
+      "value": "webIQ-Root"
+    },
+    "rootManagementGroupDisplayName": {
+      "value": "webIQ Cloud Root"
+    },
+    "childManagementGroups": {
+      "value": [
+        { "id": "Platform", "displayName": "Platform" },
+        { "id": "Lifecycle", "displayName": "Lifecycle" },
+        { "id": "Customers", "displayName": "Customers" },
+        { "id": "Corporate", "displayName": "Corporate" },
+        { "id": "Decommissioned", "displayName": "Decommissioned" }
+      ]
+    }
+  }
+}

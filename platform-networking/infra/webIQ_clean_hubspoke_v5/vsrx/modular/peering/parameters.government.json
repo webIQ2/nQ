@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "hubSubscriptionId": { "value": "7426560d-ace3-4e95-9df4-69985fb9d8cc" },
+    "hubResourceGroupName": { "value": "rg-webiq-vsrx-hub" },
+    "hubVnetName": { "value": "vnet-webiq-vsrx-hub" },
+    "spokeSubscriptionId": { "value": "1011dd77-657c-4c57-931b-0b77b92e7378" },
+    "spokeResourceGroupName": { "value": "rg-gi-vsrx-government" },
+    "spokeVnetName": { "value": "vnet-gi-government" },
+    "peeringPrefix": { "value": "government" }
+  }
+}
