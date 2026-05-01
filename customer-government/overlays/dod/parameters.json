@@ -1,7 +1,0 @@
-{
-  "customerName": "Department of Defense iQ",
-  "subscriptionId": "2b536fb7-3486-402e-b195-a5cc4f908e98",
-  "deploymentEnvironment": "Production Government",
-  "addressSpace": ["10.82.0.0/16"],
-  "workloadSubnetPrefix": "10.82.1.0/24"
-}

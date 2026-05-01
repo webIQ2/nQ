@@ -1,20 +1,20 @@
-# webiq-cloud structural deployment blueprint
+# webIQ VyOS v5 CI/CD Recovery Package
 
-This package maps your GitHub organization and Azure governance structure into a multi-repository deployment model.
+This package restores the files needed to deploy, validate, and destroy the proven `webIQ_clean_hubspoke_v5` baseline from GitHub Actions.
 
-Repos included:
-- platform-governance
-- platform-networking
-- shared-bicep-modules
-- customer-commercial
-- customer-government
-- docs
+## Contents
+- `.github/workflows/deploy-vyos-v5.yml`
+- `.github/workflows/destroy-vyos-v5.yml`
+- `infra/webIQ_clean_hubspoke_v5/...`
+- `docs/webIQ_v5_github_actions_runbook.md`
+- `scripts/create-webiq-repo-layout.ps1`
+- `scripts/create-webiq-repo-layout.sh`
 
-GitHub environment names used in workflow files match the names you said you already created:
-- Lab
-- Development
-- Test
-- Staging
-- Production Commercial
-- Production Government
-- Destroy
+## Intended repo layout
+```text
+repo-root/
+  .github/workflows/
+  docs/
+  infra/webIQ_clean_hubspoke_v5/
+  scripts/
+```
